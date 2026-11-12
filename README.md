@@ -4,7 +4,7 @@
 *MEDATHON 2026 — Filter 2 Submission (Prototype + Interactive MVP)*
 
 ### 👨‍⚕️ Team & Supervision
-- **Innovators:** Mohammed Alenezi & Hani Alharbi (BMT, Prince Sultan Military College of Health Sciences - PSMCHS)
+- **Innovators:** Mohammed Alenezi & Hani Alharbi (RC/BMT, Prince Sultan Military College of Health Sciences - PSMCHS)
 - **Supervisor:** Dr. Asma Omar Alamoudi (Respiratory Care, PSMCHS)
 
 ---
