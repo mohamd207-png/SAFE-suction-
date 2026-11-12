@@ -1,791 +1,1102 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SAFE-Suction | محاكي العناية المركزة التفاعلي ثلاثي الأبعاد</title>
-  <style>
-    :root {
-      --bg-dark: #0b1320;
-      --panel-bg: rgba(15, 25, 42, 0.86);
-      --border-clr: rgba(56, 189, 248, 0.25);
-      --accent: #38bdf8;
-      --accent-green: #10b981;
-      --accent-amber: #f59e0b;
-      --accent-red: #ef4444;
-      --text-main: #f1f5f9;
-      --text-muted: #94a3b8;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-    body { background: radial-gradient(circle at center, #16243b 0%, #090f1a 100%); color: var(--text-main); overflow: hidden; height: 100vh; width: 100vw; user-select: none; }
-    #canvas-container { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SAFE-Suction™ — 3D Interactive ICU Simulator</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+        }
 
-    /* Top Header */
-    .top-bar {
-      position: absolute; top: 14px; left: 16px; right: 16px; z-index: 10;
-      display: flex; justify-content: space-between; align-items: center;
-      background: var(--panel-bg); backdrop-filter: blur(12px);
-      border: 1px solid var(--border-clr); border-radius: 12px;
-      padding: 10px 18px; box-shadow: 0 10px 30px rgba(0,0,0,0.45);
-    }
-    .brand-box { display: flex; align-items: center; gap: 12px; }
-    .brand-badge {
-      background: linear-gradient(135deg, #0284c7, #0ea5e9);
-      color: #fff; font-weight: 800; font-size: 14px; padding: 6px 12px;
-      border-radius: 8px; letter-spacing: 0.5px;
-    }
-    .brand-title h1 { font-size: 16px; font-weight: 700; color: #fff; }
-    .brand-title p { font-size: 12px; color: var(--text-muted); }
+        body {
+            background: #060a10;
+            color: #f8fafc;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+        }
 
-    .status-pills { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-    .pill {
-      display: flex; align-items: center; gap: 6px;
-      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
-      padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;
-    }
-    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent-green); box-shadow: 0 0 8px var(--accent-green); }
-    .dot.amber { background: var(--accent-amber); box-shadow: 0 0 8px var(--accent-amber); }
-    .dot.red { background: var(--accent-red); box-shadow: 0 0 8px var(--accent-red); }
+        #canvas-container {
+            width: 100%;
+            height: 100%;
+            display: block;
+            cursor: grab;
+        }
 
-    /* Side Control Panel */
-    .side-panel {
-      position: absolute; top: 82px; right: 16px; width: 320px; max-height: calc(100vh - 100px);
-      overflow-y: auto; z-index: 10; background: var(--panel-bg); backdrop-filter: blur(12px);
-      border: 1px solid var(--border-clr); border-radius: 12px; padding: 14px;
-      display: flex; flex-direction: column; gap: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.45);
-    }
-    .section-title {
-      font-size: 12px; font-weight: 700; color: var(--accent);
-      text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid rgba(255,255,255,0.08);
-      padding-bottom: 5px; margin-bottom: 6px;
-    }
-    .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-    .btn-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
-    button {
-      background: rgba(30, 41, 59, 0.9); color: var(--text-main);
-      border: 1px solid rgba(148, 163, 184, 0.25); border-radius: 8px;
-      padding: 8px 10px; font-size: 11.5px; font-weight: 600; cursor: pointer;
-      transition: all 0.2s ease; text-align: center;
-    }
-    button:hover { border-color: var(--accent); background: rgba(56, 189, 248, 0.15); }
-    button.active {
-      background: linear-gradient(135deg, #0284c7, #0369a1);
-      border-color: var(--accent); color: #fff; box-shadow: 0 0 12px rgba(56, 189, 248, 0.35);
-    }
-    button.state-btn { text-align: right; padding: 7px 10px; display: flex; justify-content: space-between; align-items: center; }
-    button.state-btn span.tag { font-size: 10px; opacity: 0.8; font-family: monospace; }
+        #canvas-container:active {
+            cursor: grabbing;
+        }
 
-    /* Left Telemetry & Legend Panel */
-    .left-panel {
-      position: absolute; top: 82px; left: 16px; width: 290px; z-index: 10;
-      background: var(--panel-bg); backdrop-filter: blur(12px);
-      border: 1px solid var(--border-clr); border-radius: 12px; padding: 14px;
-      display: flex; flex-direction: column; gap: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.45);
-    }
-    .metric-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .metric-card {
-      background: rgba(15, 23, 42, 0.75); border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 8px; padding: 8px 10px;
-    }
-    .metric-card .lbl { font-size: 10.5px; color: var(--text-muted); }
-    .metric-card .val { font-size: 17px; font-weight: 800; color: var(--accent); font-family: monospace; margin-top: 2px; }
-    .alert-banner {
-      background: rgba(16, 185, 129, 0.12); border: 1px solid var(--accent-green);
-      border-radius: 8px; padding: 8px 10px; font-size: 11.5px; line-height: 1.45;
-    }
-    .slider-row { display: flex; flex-direction: column; gap: 4px; font-size: 12px; }
-    input[type="range"] { width: 100%; accent-color: var(--accent); cursor: pointer; }
+        /* Top Floating Header */
+        .hud-top {
+            position: fixed;
+            top: 14px;
+            left: 16px;
+            right: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            pointer-events: none;
+            z-index: 10;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
 
-    .footer-hint {
-      position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%);
-      z-index: 10; background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255,255,255,0.1);
-      padding: 6px 16px; border-radius: 20px; font-size: 11.5px; color: var(--text-muted);
-      pointer-events: none;
-    }
-    @media (max-width: 900px) {
-      .left-panel { display: none; }
-      .side-panel { width: 270px; }
-    }
-  </style>
+        .hud-brand {
+            background: rgba(15, 23, 36, 0.88);
+            border: 1px solid #1e293b;
+            backdrop-filter: blur(10px);
+            padding: 8px 14px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            pointer-events: auto;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+
+        .badge {
+            background: linear-gradient(135deg, #06b6d4, #3b82f6);
+            color: #000;
+            font-weight: 900;
+            font-size: 13px;
+            padding: 4px 8px;
+            border-radius: 6px;
+        }
+
+        .brand-info h1 {
+            font-size: 14px;
+            font-weight: 800;
+            color: #fff;
+        }
+
+        .brand-info p {
+            font-size: 10px;
+            color: #38bdf8;
+            letter-spacing: 0.5px;
+        }
+
+        /* Camera View Switcher (Includes Screen Focus) */
+        .cam-controls {
+            background: rgba(15, 23, 36, 0.9);
+            border: 1px solid #1e293b;
+            backdrop-filter: blur(10px);
+            padding: 5px;
+            border-radius: 12px;
+            display: flex;
+            gap: 6px;
+            pointer-events: auto;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+
+        .cam-btn {
+            background: transparent;
+            border: 1px solid transparent;
+            color: #94a3b8;
+            padding: 7px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .cam-btn:hover {
+            color: #fff;
+            background: rgba(255,255,255,0.05);
+        }
+
+        .cam-btn.active {
+            background: #06b6d4;
+            color: #000;
+            box-shadow: 0 2px 10px rgba(6, 182, 212, 0.4);
+        }
+
+        /* Bottom Scenario & Profile Dock */
+        .hud-bottom {
+            position: fixed;
+            bottom: 14px;
+            left: 16px;
+            right: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .dock-bar {
+            background: rgba(15, 23, 36, 0.92);
+            border: 1px solid #1e293b;
+            backdrop-filter: blur(12px);
+            padding: 8px 12px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            pointer-events: auto;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.65);
+            max-width: 100%;
+            overflow-x: auto;
+        }
+
+        .sc-btn {
+            background: #0f172a;
+            border: 1px solid #334155;
+            color: #cbd5e1;
+            padding: 6px 11px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+
+        .sc-btn:hover {
+            border-color: #06b6d4;
+            color: #fff;
+        }
+
+        .sc-btn.active {
+            background: #06b6d4;
+            color: #000;
+            border-color: #06b6d4;
+        }
+
+        .sc-btn.tissue.active {
+            background: #a855f7;
+            color: #fff;
+            border-color: #c084fc;
+        }
+
+        .divider {
+            width: 1px;
+            height: 22px;
+            background: #334155;
+            margin: 0 2px;
+        }
+
+        .auto-btn {
+            background: linear-gradient(135deg, #8b5cf6, #ec4899);
+            border: none;
+            color: #fff;
+            padding: 7px 13px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 800;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .hint-pill {
+            font-size: 11px;
+            color: #94a3b8;
+            background: rgba(8, 13, 20, 0.75);
+            padding: 3px 12px;
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+    </style>
 </head>
 <body>
 
-  <div id="canvas-container"></div>
+    <!-- Top Floating HUD -->
+    <div class="hud-top">
+        <div class="hud-brand">
+            <span class="badge">SAFE-SUCTION™</span>
+            <div class="brand-info">
+                <h1>3D Digital Twin & Telemetry Console</h1>
+                <p>PSMCHS Critical Care Innovation</p>
+            </div>
+        </div>
 
-  <!-- Top Header -->
-  <div class="top-bar">
-    <div class="brand-box">
-      <div class="brand-badge">SAFE-Suction™</div>
-      <div class="brand-title">
-        <h1>نظام المراقبة والتحكم الذكي بالشفط الرغامي وتحت المزمار</h1>
-        <p>Sensor-Guided Suctioning | Mohammed Alenezi & Hani Alharbi (BMT)</p>
-      </div>
-    </div>
-    <div class="status-pills">
-      <div class="pill"><span class="dot" id="status-dot"></span><span id="status-text">SYSTEM OK — CLOSED-LOOP ACTIVE</span></div>
-      <div class="pill">البروفايل: <strong id="profile-label" style="color:#38bdf8;">Adult (-120 mmHg)</strong></div>
-    </div>
-  </div>
-
-  <!-- Right Control Panel -->
-  <div class="side-panel">
-    <div>
-      <div class="section-title">1. فئة المريض (Patient Profile Limits)</div>
-      <div class="btn-grid-3">
-        <button class="profile-btn active" onclick="setProfile('adult', -120, 'Adult')">بالغين<br><small>-120 mmHg</small></button>
-        <button class="profile-btn" onclick="setProfile('pediatric', -100, 'Pediatric')">أطفال<br><small>-100 mmHg</small></button>
-        <button class="profile-btn" onclick="setProfile('neonatal', -80, 'Neonatal')">حديثي الولادة<br><small>-80 mmHg</small></button>
-      </div>
+        <div class="cam-controls">
+            <button class="cam-btn active" id="camOverview" onclick="setCameraView('OVERVIEW')">
+                🏥 3D Device View
+            </button>
+            <button class="cam-btn" id="camScreen" onclick="setCameraView('SCREEN')">
+                📱 Screen Focus (منظور الشاشة)
+            </button>
+            <button class="cam-btn" id="camValve" onclick="setCameraView('VALVE')">
+                💨 Fail-Safe Vent & Ports
+            </button>
+        </div>
     </div>
 
-    <div>
-      <div class="section-title">2. محاكاة حالات الخط الست (6 Bench Line States)</div>
-      <div style="display:flex; flex-direction:column; gap:5px;">
-        <button class="state-btn active" id="st-normal" onclick="setLineState('normal')">
-          <span>1. تدفق طبيعي (Normal)</span><span class="tag">28 L/min</span>
-        </button>
-        <button class="state-btn" id="st-partial" onclick="setLineState('partial')">
-          <span>2. انسداد جزئي بالمخاط (Partial Clog)</span><span class="tag">14 L/min</span>
-        </button>
-        <button class="state-btn" id="st-block" onclick="setLineState('block')">
-          <span>3. انسداد كامل للخط (Complete Blockage)</span><span class="tag">1 L/min</span>
-        </button>
-        <button class="state-btn" id="st-tissue" onclick="setLineState('tissue')">
-          <span>4. التصاق جدار النسيج (Tissue Contact)</span><span class="tag">AUTO-RELIEF</span>
-        </button>
-        <button class="state-btn" id="st-leak" onclick="setLineState('leak')">
-          <span>5. تسريب أو انفصال (Leak / Disconnect)</span><span class="tag">48 L/min</span>
-        </button>
-        <button class="state-btn" id="st-undetermined" onclick="setLineState('undetermined')">
-          <span>6. غير محدد (Undetermined — Alert Only)</span><span class="tag">ALERT</span>
-        </button>
-      </div>
+    <!-- 3D Viewport -->
+    <div id="canvas-container"></div>
+
+    <!-- Bottom Interactive Controls -->
+    <div class="hud-bottom">
+        <div class="hint-pill">Drag to rotate 3D • Pinch/Scroll to zoom • Click directly on the 3D screen buttons</div>
+        <div class="dock-bar">
+            <button class="sc-btn active" onclick="setScenario('NORMAL')">1. Normal</button>
+            <button class="sc-btn" onclick="setScenario('PARTIAL')">2. Partial Clog</button>
+            <button class="sc-btn" onclick="setScenario('BLOCK')">3. Complete Clog</button>
+            <button class="sc-btn tissue" onclick="setScenario('TISSUE')">4. Tissue Contact (Vent)</button>
+            <button class="sc-btn" onclick="setScenario('LEAK')">5. Air Leak</button>
+            <button class="sc-btn" onclick="setScenario('UNKNOWN')">6. Undetermined</button>
+            <div class="divider"></div>
+            <button class="sc-btn" onclick="cycleProfile()">Profile: <span id="hudProfile">ADULT</span></button>
+            <button class="sc-btn" onclick="cycleMode()">Mode: <span id="hudMode">EVAC</span></button>
+            <button class="auto-btn" id="autoBtn" onclick="toggleAutoSim()">▶ Auto-Demo</button>
+        </div>
     </div>
 
-    <div>
-      <div class="section-title">3. زوايا التصوير الـ 6 (MEDATHON Views)</div>
-      <div class="btn-grid-3">
-        <button onclick="setCamView('front')">أمامي</button>
-        <button onclick="setCamView('back')">خلفي</button>
-        <button onclick="setCamView('right')">يمين</button>
-        <button onclick="setCamView('left')">يسار</button>
-        <button onclick="setCamView('top')">علوي</button>
-        <button onclick="setCamView('bottom')">سفلي</button>
-      </div>
-    </div>
+    <!-- Three.js & OrbitControls (Reliable Global Build for iPad/Safari/Desktop) -->
+    <script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
+    <script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 
-    <div class="slider-row">
-      <div class="section-title">4. التفكيك الهندسي (Exploded View)</div>
-      <div style="display:flex; justify-content:space-between; font-size:11px; color:var(--text-muted);">
-        <span>مدمج (0%)</span><span id="explode-val">0%</span><span>مفكك بالكامل (100%)</span>
-      </div>
-      <input type="range" id="explode-slider" min="0" max="100" value="0" oninput="updateExplode(this.value)" />
-    </div>
-  </div>
+    <script>
+        // ==========================================
+        // 1. CLINICAL STATE & TELEMETRY ENGINE
+        // ==========================================
+        let currentProfile = 'ADULT'; // ADULT, PEDIATRIC, NEONATAL
+        let currentMode = 'SUBGLOTTIC'; // SUBGLOTTIC, CO_PILOT
+        let currentScenario = 'NORMAL';
+        let isVentOpen = false;
+        let isAutoSim = false;
+        let autoTimer = null;
+        let autoIdx = 0;
 
-  <!-- Left Telemetry Panel -->
-  <div class="left-panel">
-    <div class="section-title">القراءات الحية (Live Sensor Telemetry)</div>
-    <div class="metric-cards">
-      <div class="metric-card">
-        <div class="lbl">الضغط السالب (Pressure)</div>
-        <div class="val" id="ui-press">-120 mmHg</div>
-      </div>
-      <div class="metric-card">
-        <div class="lbl">التدفق (Suction Flow)</div>
-        <div class="val" id="ui-flow" style="color:#10b981;">28.0 L/min</div>
-      </div>
-      <div class="metric-card">
-        <div class="lbl">خط تحت المزمار (SSD)</div>
-        <div class="val" id="ui-ssd" style="font-size:13px; color:#f8fafc;">متصل — نشط</div>
-      </div>
-      <div class="metric-card">
-        <div class="lbl">الشفط العميق (Deep)</div>
-        <div class="val" id="ui-deep" style="font-size:13px; color:#94a3b8;">جاهز (Co-Pilot)</div>
-      </div>
-    </div>
+        const limits = {
+            ADULT:     { maxP: 150, defP: 100, defF: 15.0, ett: 'ETT 7.5mm • Teeth: 22cm', depthTxt: '22 cm / Mark 24 cm', fill: 0.35 },
+            PEDIATRIC: { maxP: 100, defP: 80,  defF: 9.0,  ett: 'ETT 5.0mm • Lip: 14.0cm', depthTxt: '13.5 cm / Max 15.0 cm', fill: 0.45 },
+            NEONATAL:  { maxP: 80,  defP: 60,  defF: 4.5,  ett: 'ETT 3.0mm • Lip: 8.5cm',  depthTxt: '8.5 cm / Max 9.0 cm',   fill: 0.62 }
+        };
 
-    <div class="section-title" style="margin-top:4px;">قرار المصنف الذكي (Alerts First | Clinician Decides)</div>
-    <div class="alert-banner" id="alert-box">
-      <strong>الحالة: Normal (تدفق مستقر)</strong><br>
-      الضغط الفعلي قريب من الحد المضبوط وتدفق الإفرازات مستمر بأمان دون عوائق.
-    </div>
+        const pHistory = new Array(110).fill(-100);
+        const fHistory = new Array(110).fill(15.0);
+        let liveP = -100;
+        let liveF = 15.0;
+        let liveDP = "-0.4";
 
-    <div class="section-title" style="margin-top:4px;">توصيلات المشهد ثلاثي الأبعاد</div>
-    <div style="font-size:11.5px; color:var(--text-muted); line-height:1.6;">
-      • <strong style="color:#fff;">يسار الجهاز:</strong> خط <code>TO WALL VACUUM</code> موصول بمنظم الشفط الجداري ووعاء التجميع.<br>
-      • <strong style="color:#38bdf8;">يمين علوي:</strong> منفذ <code>DEEP SUCTION</code> موصول بقسطرة الشفط المغلق.<br>
-      • <strong style="color:#10b981;">يمين سفلي:</strong> منفذ <code>SUBGLOTTIC (SSD)</code> موصول بفتحة فوق الكفة الرغامية.
-    </div>
-  </div>
-
-  <div class="footer-hint">اسحب بالماوس أو الإصبع لتدوير الجهاز 360° • عجلة الماوس للتقريب • جرّب تغيير حالات الانسداد والتفكيك</div>
-
-  <!-- Three.js & OrbitControls via CDN -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-
-  <script>
-    // =========================================================================
-    // 1. LIVE 2D MONITOR SCREEN CANVAS (4 WAVEFORMS + TELEMETRY)
-    // =========================================================================
-    const scrCanvas = document.createElement('canvas');
-    scrCanvas.width = 1024;
-    scrCanvas.height = 680;
-    const ctx = scrCanvas.getContext('2d');
-
-    let simState = {
-      profile: 'Adult',
-      targetPressure: -120,
-      currentPressure: -120,
-      currentFlow: 28,
-      lineState: 'normal',
-      phase: 0
-    };
-
-    const waveHistory = {
-      compliance: new Array(160).fill(0),
-      ventilation: new Array(160).fill(0),
-      turbulence: new Array(160).fill(0),
-      suctionFlow: new Array(160).fill(0)
-    };
-
-    function updateScreenCanvas() {
-      simState.phase += 0.12;
-      const t = simState.phase;
-
-      let pTarget = simState.targetPressure;
-      let fTarget = 28;
-      let turbAmp = 0.25;
-
-      if (simState.lineState === 'normal') {
-        pTarget = simState.targetPressure + Math.sin(t) * 3;
-        fTarget = 28 + Math.cos(t * 1.2) * 2.5;
-        turbAmp = 0.25;
-      } else if (simState.lineState === 'partial') {
-        pTarget = simState.targetPressure * 1.12 + Math.sin(t * 2) * 6;
-        fTarget = 13 + Math.sin(t * 3) * 2;
-        turbAmp = 0.75;
-      } else if (simState.lineState === 'block') {
-        pTarget = -185;
-        fTarget = 0.8 + Math.random() * 0.6;
-        turbAmp = 0.08;
-      } else if (simState.lineState === 'tissue') {
-        pTarget = (Math.sin(t * 0.7) > 0) ? -40 : simState.targetPressure * 0.9;
-        fTarget = (Math.sin(t * 0.7) > 0) ? 18 : 2.0;
-        turbAmp = 0.9;
-      } else if (simState.lineState === 'leak') {
-        pTarget = -35 + Math.sin(t) * 4;
-        fTarget = 48 + Math.sin(t * 1.5) * 4;
-        turbAmp = 0.4;
-      } else if (simState.lineState === 'undetermined') {
-        pTarget = simState.targetPressure * 0.75 + Math.sin(t * 4.3) * 22;
-        fTarget = 19 + Math.cos(t * 3.7) * 9;
-        turbAmp = 1.1;
-      }
-
-      simState.currentPressure += (pTarget - simState.currentPressure) * 0.15;
-      simState.currentFlow += (fTarget - simState.currentFlow) * 0.15;
-
-      waveHistory.compliance.push(Math.exp(-Math.pow(((t % 6) - 2.2), 2) * 1.4) * 0.85);
-      waveHistory.compliance.shift();
-
-      waveHistory.ventilation.push(Math.sin(t * 1.1) * Math.exp(-0.25 * (t % 5)) * 0.8);
-      waveHistory.ventilation.shift();
-
-      waveHistory.turbulence.push((Math.sin(t * 2.5) * 0.45 + Math.sin(t * 6.2) * 0.35) * turbAmp);
-      waveHistory.turbulence.shift();
-
-      waveHistory.suctionFlow.push((simState.currentFlow / 60) + Math.sin(t * 2) * 0.04);
-      waveHistory.suctionFlow.shift();
-
-      ctx.fillStyle = '#09131c';
-      ctx.fillRect(0, 0, 1024, 680);
-
-      const grad = ctx.createLinearGradient(0, 0, 1024, 0);
-      grad.addColorStop(0, '#0284c7');
-      grad.addColorStop(1, '#0369a1');
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, 1024, 58);
-
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 26px Segoe UI, sans-serif';
-      ctx.fillText('SAFE-Suction™ Monitor', 28, 38);
-
-      ctx.font = 'bold 18px monospace';
-      ctx.fillStyle = '#bae6fd';
-      ctx.fillText('PROFILE: ' + simState.profile.toUpperCase() + '  |  STATE: ' + simState.lineState.toUpperCase(), 450, 36);
-
-      const boxes = [
-        { x: 24, y: 76, w: 360, h: 275, title: 'Compliance', sub: 'L/cmH2O', color: '#34d399', data: waveHistory.compliance, baseline: 0.82 },
-        { x: 400, y: 76, w: 360, h: 275, title: 'Ventilation', sub: 'Flow Wave', color: '#a3e635', data: waveHistory.ventilation, baseline: 0.5 },
-        { x: 24, y: 372, w: 360, h: 275, title: 'Airway Turbulence', sub: 'Acoustic / Mucus', color: '#38bdf8', data: waveHistory.turbulence, baseline: 0.5 },
-        { x: 400, y: 372, w: 360, h: 275, title: 'Suction Flow (L/min)', sub: simState.currentFlow.toFixed(1) + ' L/min', color: '#f59e0b', data: waveHistory.suctionFlow, baseline: 0.85 }
-      ];
-
-      boxes.forEach(b => {
-        ctx.fillStyle = '#0d1b26';
-        ctx.strokeStyle = '#1e3a4c';
-        ctx.lineWidth = 2;
-        ctx.fillRect(b.x, b.y, b.w, b.h);
-        ctx.strokeRect(b.x, b.y, b.w, b.h);
-
-        ctx.strokeStyle = 'rgba(56, 189, 248, 0.08)';
-        ctx.lineWidth = 1;
-        for (let gx = b.x + 40; gx < b.x + b.w; gx += 40) {
-          ctx.beginPath(); ctx.moveTo(gx, b.y + 36); ctx.lineTo(gx, b.y + b.h - 20); ctx.stroke();
-        }
-        for (let gy = b.y + 50; gy < b.y + b.h; gy += 45) {
-          ctx.beginPath(); ctx.moveTo(b.x + 10, gy); ctx.lineTo(b.x + b.w - 10, gy); ctx.stroke();
+        function setProfile(p) {
+            currentProfile = p;
+            document.getElementById('hudProfile').textContent = p === 'PEDIATRIC' ? 'PEDS' : (p === 'NEONATAL' ? 'NEO' : 'ADULT');
         }
 
-        ctx.fillStyle = '#cbd5e1';
-        ctx.font = 'bold 17px Segoe UI, sans-serif';
-        ctx.fillText(b.title, b.x + 14, b.y + 26);
-        ctx.fillStyle = b.color;
-        ctx.font = 'bold 14px monospace';
-        ctx.fillText(b.sub, b.x + b.w - 115, b.y + 26);
-
-        ctx.strokeStyle = b.color;
-        ctx.lineWidth = 3.2;
-        ctx.beginPath();
-        const plotH = b.h - 60;
-        const baseY = b.y + 40 + plotH * b.baseline;
-        for (let i = 0; i < b.data.length; i++) {
-          const px = b.x + 14 + (i / (b.data.length - 1)) * (b.w - 28);
-          const py = baseY - b.data[i] * (plotH * 0.65);
-          if (i === 0) ctx.moveTo(px, py);
-          else ctx.lineTo(px, py);
+        function cycleProfile() {
+            const order = ['ADULT', 'PEDIATRIC', 'NEONATAL'];
+            setProfile(order[(order.indexOf(currentProfile) + 1) % order.length]);
         }
-        ctx.stroke();
-      });
 
-      const rx = 780;
-      ctx.fillStyle = '#facc15';
-      ctx.fillRect(rx, 76, 220, 92);
-      ctx.fillStyle = '#0f172a';
-      ctx.font = 'bold 15px Segoe UI, sans-serif';
-      ctx.fillText('VACUUM (mmHg)', rx + 14, 102);
-      ctx.font = 'bold 42px monospace';
-      ctx.fillText(Math.round(simState.currentPressure).toString(), rx + 14, 150);
+        function setMode(m) {
+            currentMode = m;
+            document.getElementById('hudMode').textContent = m === 'SUBGLOTTIC' ? 'EVAC' : 'DEEP';
+        }
 
-      ctx.fillStyle = '#0c4a6e';
-      ctx.strokeStyle = '#0284c7';
-      ctx.lineWidth = 2;
-      ctx.fillRect(rx, 184, 220, 90);
-      ctx.strokeRect(rx, 184, 220, 90);
-      ctx.fillStyle = '#7dd3fc';
-      ctx.font = 'bold 14px Segoe UI, sans-serif';
-      ctx.fillText('SSD CYCLE / FLOW', rx + 14, 210);
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 34px monospace';
-      ctx.fillText(simState.currentFlow.toFixed(0) + ' L/m', rx + 14, 255);
+        function cycleMode() {
+            setMode(currentMode === 'SUBGLOTTIC' ? 'CO_PILOT' : 'SUBGLOTTIC');
+        }
 
-      let stateColor = '#0369a1';
-      if (simState.lineState === 'tissue' || simState.lineState === 'block') stateColor = '#b91c1c';
-      else if (simState.lineState === 'partial' || simState.lineState === 'leak' || simState.lineState === 'undetermined') stateColor = '#b45309';
+        function setScenario(sc) {
+            currentScenario = sc;
+            document.querySelectorAll('.sc-btn').forEach(b => {
+                if (b.textContent.match(/^\d\./)) {
+                    b.classList.toggle('active', b.textContent.toUpperCase().includes(sc));
+                }
+            });
+            isVentOpen = (sc === 'TISSUE');
+        }
 
-      ctx.fillStyle = stateColor;
-      ctx.fillRect(rx, 290, 220, 95);
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 14px Segoe UI, sans-serif';
-      ctx.fillText('LINE CLASSIFIER:', rx + 14, 318);
-      ctx.font = 'bold 23px monospace';
-      ctx.fillText(simState.lineState.toUpperCase(), rx + 14, 358);
+        function toggleManualVent() {
+            isVentOpen = !isVentOpen;
+        }
 
-      ctx.fillStyle = '#065f46';
-      ctx.strokeStyle = '#10b981';
-      ctx.fillRect(rx, 402, 220, 120);
-      ctx.strokeRect(rx, 402, 220, 120);
-      ctx.fillStyle = '#6ee7b7';
-      ctx.font = 'bold 16px Segoe UI, sans-serif';
-      ctx.fillText('CLOSED-LOOP', rx + 14, 434);
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 22px Segoe UI, sans-serif';
-      ctx.fillText('CO-PILOT ACTIVE', rx + 14, 468);
-      ctx.font = '14px Segoe UI, sans-serif';
-      ctx.fillStyle = '#a7f3d0';
-      ctx.fillText('Alerts First | RT Decides', rx + 14, 500);
+        const autoSequence = [
+            { sc: 'NORMAL',  ms: 4500 },
+            { sc: 'PARTIAL', ms: 4000 },
+            { sc: 'BLOCK',   ms: 4000 },
+            { sc: 'TISSUE',  ms: 5000 },
+            { sc: 'LEAK',    ms: 3500 },
+            { sc: 'NORMAL',  ms: 4000 }
+        ];
 
-      ctx.fillStyle = '#0f293a';
-      ctx.fillRect(rx, 540, 220, 107);
-      ctx.fillStyle = '#38bdf8';
-      ctx.font = 'bold 15px Segoe UI, sans-serif';
-      ctx.fillText('ALENZI & ALHARBI', rx + 16, 575);
-      ctx.fillStyle = '#94a3b8';
-      ctx.font = '13px monospace';
-      ctx.fillText('BMT & Resp Care', rx + 16, 610);
-    }
+        function toggleAutoSim() {
+            const btn = document.getElementById('autoBtn');
+            if (isAutoSim) {
+                isAutoSim = false;
+                clearTimeout(autoTimer);
+                btn.textContent = '▶ Auto-Demo';
+                setScenario('NORMAL');
+            } else {
+                isAutoSim = true;
+                autoIdx = 0;
+                btn.textContent = '⏹ Stop Demo';
+                runAutoStep();
+            }
+        }
 
-    // =========================================================================
-    // 2. THREE.JS 3D SCENE SETUP
-    // =========================================================================
-    const container = document.getElementById('canvas-container');
-    const scene = new THREE.Scene();
+        function runAutoStep() {
+            if (!isAutoSim) return;
+            const step = autoSequence[autoIdx];
+            setScenario(step.sc);
+            autoIdx = (autoIdx + 1) % autoSequence.length;
+            autoTimer = setTimeout(runAutoStep, step.ms);
+        }
 
-    const camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 0.1, 200);
-    camera.position.set(0.5, 1.2, 13.5);
+        // ==========================================
+        // 2. HIGH-RES 2D SCREEN CANVAS (MATCHES UI.HTML)
+        // ==========================================
+        const uiCanvas = document.createElement('canvas');
+        uiCanvas.width = 1280;
+        uiCanvas.height = 800;
+        const ctx = uiCanvas.getContext('2d');
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.shadowMap.enabled = true;
-    container.appendChild(renderer.domElement);
+        function roundRect(c, x, y, w, h, r) {
+            c.beginPath();
+            c.moveTo(x + r, y);
+            c.arcTo(x + w, y, x + w, y + h, r);
+            c.arcTo(x + w, y + h, x, y + h, r);
+            c.arcTo(x, y + h, x, y, r);
+            c.arcTo(x, y, x + w, y, r);
+            c.closePath();
+        }
 
-    const controls = new THREE.OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.06;
-    controls.target.set(0, 0, 0);
+        function updateTelemetryMath() {
+            const cfg = limits[currentProfile];
+            let targetP = -cfg.defP;
+            let targetF = cfg.defF;
 
-    scene.add(new THREE.AmbientLight(0xdbeafe, 0.75));
-    const dirLight = new THREE.DirectionalLight(0xffffff, 1.15);
-    dirLight.position.set(8, 14, 12);
-    dirLight.castShadow = true;
-    scene.add(dirLight);
+            if (currentScenario === 'NORMAL') {
+                targetP += (Math.random() * 4 - 2);
+                targetF += (Math.random() * 0.7 - 0.35);
+                liveDP = "-0.4";
+            } else if (currentScenario === 'PARTIAL') {
+                targetP = -cfg.maxP * 0.85 + (Math.random() * 5 - 2.5);
+                targetF = cfg.defF * 0.35 + (Math.random() * 0.4 - 0.2);
+                liveDP = "-8.5";
+            } else if (currentScenario === 'BLOCK') {
+                targetP = -cfg.maxP - 15 + (Math.random() * 2 - 1);
+                targetF = 0.2 + (Math.random() * 0.1);
+                liveDP = "-14.2";
+            } else if (currentScenario === 'TISSUE') {
+                if (isVentOpen) {
+                    targetP = -3 + (Math.random() * 2);
+                    targetF = 21.5 + (Math.random() * 1.5);
+                    liveDP = "+38.0";
+                } else {
+                    targetP = -cfg.maxP - 25;
+                    targetF = 0.0;
+                    liveDP = "-42.5";
+                }
+            } else if (currentScenario === 'LEAK') {
+                targetP = -8 + (Math.random() * 2.5);
+                targetF = 24.0 + (Math.random() * 1.2);
+                liveDP = "+0.1";
+            } else if (currentScenario === 'UNKNOWN') {
+                targetP = -55 + Math.sin(Date.now() / 110) * 35;
+                targetF = 8.0 + Math.cos(Date.now() / 150) * 5.5;
+                liveDP = "ERR";
+            }
 
-    const rimLight = new THREE.DirectionalLight(0x38bdf8, 0.55);
-    rimLight.position.set(-10, -5, -8);
-    scene.add(rimLight);
+            if (isVentOpen && currentScenario !== 'TISSUE') {
+                targetP = -2;
+                targetF = 20.0;
+                liveDP = "+29.0";
+            }
 
-    const matWhiteHousing = new THREE.MeshStandardMaterial({ color: 0xf1f5f9, roughness: 0.32, metalness: 0.05 });
-    const matDarkBezel = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.4, metalness: 0.2 });
-    const matSteel = new THREE.MeshStandardMaterial({ color: 0xcbd5e1, roughness: 0.22, metalness: 0.85 });
-    const matBlackKnob = new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.45, metalness: 0.15 });
-    const matBlueConn = new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.3, metalness: 0.1 });
-    const matClearTube = new THREE.MeshPhysicalMaterial({
-      color: 0xe0f2fe, transparent: true, opacity: 0.42, roughness: 0.12, metalness: 0.05
-    });
+            liveP = targetP;
+            liveF = targetF;
+            pHistory.shift(); pHistory.push(liveP);
+            fHistory.shift(); fHistory.push(liveF);
+        }
 
-    const screenTexture = new THREE.CanvasTexture(scrCanvas);
-    const matScreen = new THREE.MeshBasicMaterial({ map: screenTexture });
+        function drawScreenUI() {
+            const W = 1280, H = 800;
+            const cfg = limits[currentProfile];
 
-    const rootGroup = new THREE.Group();
-    scene.add(rootGroup);
+            // Background
+            ctx.fillStyle = '#080d14';
+            ctx.fillRect(0, 0, W, H);
 
-    const grpFrontBezel = new THREE.Group();
-    const grpRearHousing = new THREE.Group();
-    const grpInternalPCB = new THREE.Group();
-    const grpRightValves = new THREE.Group();
-    const grpLeftValve = new THREE.Group();
-    const grpTopLock = new THREE.Group();
+            // --- HEADER BAR (y: 0..84) ---
+            const hdrGrad = ctx.createLinearGradient(0, 0, 0, 84);
+            hdrGrad.addColorStop(0, '#131d2e');
+            hdrGrad.addColorStop(1, '#0d1522');
+            ctx.fillStyle = hdrGrad;
+            ctx.fillRect(0, 0, W, 84);
+            ctx.strokeStyle = '#1e293b';
+            ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(0, 84); ctx.lineTo(W, 84); ctx.stroke();
 
-    rootGroup.add(grpFrontBezel, grpRearHousing, grpInternalPCB, grpRightValves, grpLeftValve, grpTopLock);
+            // Brand Badge
+            const bGrad = ctx.createLinearGradient(24, 20, 195, 64);
+            bGrad.addColorStop(0, '#06b6d4');
+            bGrad.addColorStop(1, '#3b82f6');
+            ctx.fillStyle = bGrad;
+            roundRect(ctx, 24, 20, 175, 44, 8);
+            ctx.fill();
+            ctx.fillStyle = '#000';
+            ctx.font = '900 18px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('SAFE-SUCTION™', 111, 48);
 
-    const ivPole = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 16, 32), matSteel);
-    ivPole.position.set(0.6, 0, -1.65);
-    rootGroup.add(ivPole);
+            // Title & Subtitle
+            ctx.textAlign = 'left';
+            ctx.fillStyle = '#f8fafc';
+            ctx.font = '700 21px sans-serif';
+            ctx.fillText('PSMCHS Smart Airway Unit', 216, 41);
+            ctx.fillStyle = '#06b6d4';
+            ctx.font = '600 13px sans-serif';
+            ctx.fillText('CLOSED-LOOP MUCOSAL TRAUMA PREVENTION', 216, 62);
 
-    const tableSurface = new THREE.Mesh(
-      new THREE.BoxGeometry(26, 0.45, 7),
-      new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.4, metalness: 0.15 })
-    );
-    tableSurface.position.set(0, -3.2, -0.5);
-    rootGroup.add(tableSurface);
+            // Profile Buttons (x: 610..845)
+            ctx.fillStyle = '#090e17';
+            roundRect(ctx, 610, 20, 235, 44, 10); ctx.fill();
+            ctx.strokeStyle = '#1e293b'; ctx.stroke();
+            const profs = ['ADULT', 'PEDS', 'NEO'];
+            const profKeys = ['ADULT', 'PEDIATRIC', 'NEONATAL'];
+            profs.forEach((lbl, i) => {
+                const bx = 615 + i * 76;
+                if (currentProfile === profKeys[i]) {
+                    ctx.fillStyle = '#1e293b';
+                    roundRect(ctx, bx, 24, 72, 36, 7); ctx.fill();
+                    ctx.fillStyle = '#ffffff';
+                } else {
+                    ctx.fillStyle = '#94a3b8';
+                }
+                ctx.font = '700 14px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(lbl, bx + 36, 47);
+            });
 
-    const baseClamp = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 1.1, 32), matSteel);
-    baseClamp.position.set(0.6, -2.5, -1.65);
-    rootGroup.add(baseClamp);
+            // Mode Buttons (x: 860..1145)
+            ctx.fillStyle = '#090e17';
+            roundRect(ctx, 860, 20, 285, 44, 10); ctx.fill();
+            ctx.strokeStyle = '#1e293b'; ctx.stroke();
+            const modes = ['SUBGLOTTIC (EVAC)', 'CO-PILOT (DEEP)'];
+            const modeKeys = ['SUBGLOTTIC', 'CO_PILOT'];
+            modes.forEach((lbl, i) => {
+                const bx = 865 + i * 138;
+                if (currentMode === modeKeys[i]) {
+                    ctx.fillStyle = '#1e293b';
+                    roundRect(ctx, bx, 24, 134, 36, 7); ctx.fill();
+                    ctx.fillStyle = '#ffffff';
+                } else {
+                    ctx.fillStyle = '#94a3b8';
+                }
+                ctx.font = '700 12px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(lbl, bx + 67, 47);
+            });
 
-    const baseKnob = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.4, 24), matBlackKnob);
-    baseKnob.rotation.z = Math.PI / 2;
-    baseKnob.position.set(1.25, -2.5, -1.65);
-    rootGroup.add(baseKnob);
+            // Clock
+            ctx.fillStyle = '#10b981';
+            ctx.beginPath(); ctx.arc(1168, 42, 5, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#94a3b8';
+            ctx.font = '600 15px monospace';
+            ctx.textAlign = 'left';
+            ctx.fillText(new Date().toTimeString().split(' ')[0], 1180, 47);
 
-    const rearBracket = new THREE.Mesh(new THREE.BoxGeometry(1.5, 2.5, 1.2), matSteel);
-    rearBracket.position.set(0.6, 0, -1.25);
-    grpRearHousing.add(rearBracket);
+            // --- THREE COLUMNS LAYOUT (y: 104..780) ---
+            const colY = 104, colH = 676;
 
-    const rearKnob = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.45, 24), matBlackKnob);
-    rearKnob.rotation.z = Math.PI / 2;
-    rearKnob.position.set(1.65, 0.4, -1.25);
-    grpRearHousing.add(rearKnob);
+            // === COLUMN 1: WAVEFORMS (x: 24, w: 520) ===
+            ctx.fillStyle = '#0f1724';
+            roundRect(ctx, 24, colY, 520, colH, 16); ctx.fill();
+            ctx.strokeStyle = '#1e293b'; ctx.lineWidth = 2; ctx.stroke();
 
-    const mainBox = new THREE.Mesh(new THREE.BoxGeometry(5.5, 3.8, 1.15), matWhiteHousing);
-    mainBox.position.set(0, 0, -0.35);
-    grpRearHousing.add(mainBox);
+            ctx.fillStyle = '#94a3b8';
+            ctx.font = '700 15px sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText('REAL-TIME FLUIDICS TELEMETRY', 44, 136);
+            ctx.fillStyle = '#06b6d4';
+            ctx.textAlign = 'right';
+            ctx.fillText(`dP/dt: ${liveDP} mmHg/s`, 524, 136);
 
-    const frontFrame = new THREE.Mesh(new THREE.BoxGeometry(5.6, 3.9, 0.28), matWhiteHousing);
-    frontFrame.position.set(0, 0, 0.35);
-    grpFrontBezel.add(frontFrame);
+            ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+            ctx.beginPath(); ctx.moveTo(44, 150); ctx.lineTo(524, 150); ctx.stroke();
 
-    const screenMesh = new THREE.Mesh(new THREE.PlaneGeometry(4.65, 3.15), matScreen);
-    screenMesh.position.set(-0.18, 0, 0.50);
-    grpFrontBezel.add(screenMesh);
+            // Pressure Wave Box
+            drawWavePanel(44, 166, 480, 290, 'VACUUM PRESSURE (P) [mmHg]', pHistory, -cfg.maxP - 30, 0, '#06b6d4');
+            // Flow Wave Box
+            drawWavePanel(44, 472, 480, 290, 'ASPIRATION FLOW (Q) [L/min]', fHistory, 0, 30, '#10b981');
 
-    const ledPill = new THREE.Mesh(new THREE.BoxGeometry(0.32, 1.35, 0.06), new THREE.MeshStandardMaterial({ color: 0x64748b }));
-    ledPill.position.set(2.42, 0.15, 0.49);
-    grpFrontBezel.add(ledPill);
+            // === COLUMN 2: DIAGNOSTICS & DEPTH GUIDE (x: 562, w: 380) ===
+            ctx.fillStyle = '#0f1724';
+            roundRect(ctx, 562, colY, 380, colH, 16); ctx.fill();
+            ctx.strokeStyle = '#1e293b'; ctx.stroke();
 
-    const bottomLip = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.18, 0.55), matSteel);
-    bottomLip.position.set(-0.18, -1.98, 0.32);
-    grpFrontBezel.add(bottomLip);
+            ctx.fillStyle = '#94a3b8';
+            ctx.font = '700 15px sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText('AIRWAY LINE DIAGNOSTICS', 582, 136);
+            ctx.textAlign = 'right';
+            ctx.font = '600 13px sans-serif';
+            ctx.fillText(`Limit: -${cfg.maxP} mmHg`, 922, 136);
 
-    const topLockBar = new THREE.Mesh(new THREE.BoxGeometry(4.8, 0.16, 0.35), matWhiteHousing);
-    topLockBar.position.set(0, 1.98, 0.22);
-    grpTopLock.add(topLockBar);
+            ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+            ctx.beginPath(); ctx.moveTo(582, 150); ctx.lineTo(922, 150); ctx.stroke();
 
-    [-1.9, 1.9].forEach(sx => {
-      const screw = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.22, 16), matSteel);
-      screw.position.set(sx, 2.02, 0.22);
-      grpTopLock.add(screw);
-    });
+            // Readout Box 1 (Pressure)
+            ctx.fillStyle = '#090e17';
+            roundRect(ctx, 582, 168, 162, 135, 12); ctx.fill();
+            ctx.strokeStyle = '#1e293b'; ctx.stroke();
+            ctx.fillStyle = '#94a3b8'; ctx.font = '700 12px sans-serif'; ctx.textAlign = 'center';
+            ctx.fillText('NEGATIVE PRESSURE', 663, 194);
+            ctx.fillStyle = '#06b6d4'; ctx.font = '900 46px sans-serif';
+            ctx.fillText(Math.round(liveP).toString(), 663, 250);
+            ctx.fillStyle = '#94a3b8'; ctx.font = '600 13px sans-serif';
+            ctx.fillText('mmHg (Gauge)', 663, 282);
 
-    const pcbBoard = new THREE.Mesh(
-      new THREE.BoxGeometry(4.4, 3.0, 0.08),
-      new THREE.MeshStandardMaterial({ color: 0x065f46, roughness: 0.35, metalness: 0.3 })
-    );
-    pcbBoard.position.set(0, 0, 0.0);
-    grpInternalPCB.add(pcbBoard);
+            // Readout Box 2 (Flow)
+            ctx.fillStyle = '#090e17';
+            roundRect(ctx, 760, 168, 162, 135, 12); ctx.fill();
+            ctx.strokeStyle = '#1e293b'; ctx.stroke();
+            ctx.fillStyle = '#94a3b8'; ctx.font = '700 12px sans-serif';
+            ctx.fillText('LINE FLOW RATE', 841, 194);
+            ctx.fillStyle = '#10b981'; ctx.font = '900 46px sans-serif';
+            ctx.fillText(liveF.toFixed(1), 841, 250);
+            ctx.fillStyle = '#94a3b8'; ctx.font = '600 13px sans-serif';
+            ctx.fillText('L/min', 841, 282);
 
-    [-0.5, -1.2].forEach((vy, idx) => {
-      const solenoid = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.9, 20), matSteel);
-      solenoid.rotation.z = Math.PI / 2;
-      solenoid.position.set(1.4, vy + 0.6, 0.12);
-      grpInternalPCB.add(solenoid);
+            // State Banner
+            const stateMeta = {
+                NORMAL:  { bg: 'rgba(16,185,129,0.16)',  border: '#10b981', text: '#10b981', title: 'NORMAL PATENCY', desc: 'Unrestricted secretion drainage. Baseline line resistance.' },
+                PARTIAL: { bg: 'rgba(245,158,11,0.16)',  border: '#f59e0b', text: '#f59e0b', title: 'PARTIAL CLOG DETECTED', desc: 'Viscous secretion build-up in progress. Increasing draw.' },
+                BLOCK:   { bg: 'rgba(239,68,68,0.18)',   border: '#ef4444', text: '#ef4444', title: 'COMPLETE TUBE OCCLUSION', desc: 'Persistent secretion plug. Zero flow. Line flush advised.' },
+                TISSUE:  { bg: 'rgba(168,85,247,0.22)',  border: '#a855f7', text: '#d8b4fe', title: 'MUCOSAL TISSUE CONTACT', desc: 'Rapid dP/dt collapse! Atmospheric vent open to release mucosa.' },
+                LEAK:    { bg: 'rgba(59,130,246,0.16)',  border: '#3b82f6', text: '#60a5fa', title: 'SYSTEM AIR LEAK', desc: 'Atmospheric air entrainment. Check canister or cuff seal.' },
+                UNKNOWN: { bg: 'rgba(148,163,184,0.16)', border: '#94a3b8', text: '#cbd5e1', title: 'ANALYZING / UNDETERMINED', desc: 'Acoustic noise filter settling. Sensor calibration active.' }
+            }[currentScenario];
 
-      const sensorChip = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.45, 0.18), matBlackKnob);
-      sensorChip.position.set(0.2, vy + 0.6, 0.12);
-      grpInternalPCB.add(sensorChip);
-    });
+            ctx.fillStyle = stateMeta.bg;
+            roundRect(ctx, 582, 322, 340, 62, 10); ctx.fill();
+            ctx.strokeStyle = stateMeta.border; ctx.lineWidth = 2; ctx.stroke();
+            ctx.fillStyle = stateMeta.text;
+            ctx.font = '800 19px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(stateMeta.title, 752, 360);
 
-    function createPortWithValve(isRight, yPos, connMat) {
-      const portGrp = new THREE.Group();
-      const dir = isRight ? 1 : -1;
+            // Explanation Text
+            ctx.fillStyle = '#94a3b8';
+            ctx.font = '500 13px sans-serif';
+            ctx.fillText(stateMeta.desc, 752, 412);
 
-      const boss = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.26, 0.55, 24), matWhiteHousing);
-      boss.rotation.z = Math.PI / 2;
-      boss.position.set(dir * 2.95, yPos, 0.05);
-      portGrp.add(boss);
+            // Shallow Suction Co-Pilot Card
+            ctx.fillStyle = '#0a111c';
+            roundRect(ctx, 582, 558, 340, 200, 12); ctx.fill();
+            ctx.strokeStyle = '#1e293b'; ctx.stroke();
 
-      const luerFitting = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.22, 0.5, 24), connMat);
-      luerFitting.rotation.z = Math.PI / 2;
-      luerFitting.position.set(dir * 3.35, yPos, 0.05);
-      portGrp.add(luerFitting);
+            ctx.fillStyle = '#06b6d4';
+            ctx.font = '700 13px sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText('SHALLOW SUCTION CO-PILOT', 598, 586);
+            ctx.textAlign = 'right';
+            ctx.font = '600 12px sans-serif';
+            ctx.fillText(cfg.ett, 906, 586);
 
-      const valveKnob = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.25, 16), matBlackKnob);
-      valveKnob.position.set(dir * 2.95, yPos + 0.32, 0.05);
-      portGrp.add(valveKnob);
+            ctx.fillStyle = '#94a3b8';
+            ctx.textAlign = 'left';
+            ctx.fillText('Catheter Advance', 598, 622);
+            ctx.fillStyle = '#f8fafc';
+            ctx.font = '700 13px sans-serif';
+            ctx.textAlign = 'right';
+            ctx.fillText(cfg.depthTxt, 906, 622);
 
-      return portGrp;
-    }
+            // Progress Bar
+            ctx.fillStyle = '#1e293b';
+            roundRect(ctx, 598, 638, 308, 14, 7); ctx.fill();
+            const barGrad = ctx.createLinearGradient(598, 0, 906, 0);
+            barGrad.addColorStop(0, '#10b981');
+            barGrad.addColorStop(1, '#f59e0b');
+            ctx.fillStyle = barGrad;
+            roundRect(ctx, 598, 638, 308 * cfg.fill, 14, 7); ctx.fill();
 
-    grpRightValves.add(createPortWithValve(true, -0.35, matSteel));
-    grpRightValves.add(createPortWithValve(true, -1.05, matBlueConn));
-    grpLeftValve.add(createPortWithValve(false, -0.55, matWhiteHousing));
+            ctx.fillStyle = '#f59e0b';
+            ctx.font = '600 12px sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText('⚠ Prevents carina impingement & vagal', 598, 682);
+            ctx.fillText('   bradycardia (AARC / NRP Guidelines).', 598, 700);
 
-    const wallPanel = new THREE.Mesh(
-      new THREE.BoxGeometry(2.4, 3.6, 0.3),
-      new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.4 })
-    );
-    wallPanel.position.set(-7.5, 0.8, -1.8);
-    rootGroup.add(wallPanel);
+            // === COLUMN 3: FAIL-SAFE PROTECTION (x: 960, w: 296) ===
+            const vGrad = ctx.createLinearGradient(0, colY, 0, colY + colH);
+            vGrad.addColorStop(0, '#111a28');
+            vGrad.addColorStop(1, '#0c1420');
+            ctx.fillStyle = vGrad;
+            roundRect(ctx, 960, colY, 296, colH, 16); ctx.fill();
+            ctx.strokeStyle = isVentOpen ? '#a855f7' : '#06b6d4';
+            ctx.lineWidth = 3;
+            ctx.stroke();
 
-    const gaugeCyl = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 0.35, 32), matSteel);
-    gaugeCyl.rotation.x = Math.PI / 2;
-    gaugeCyl.position.set(-7.5, 1.5, -1.5);
-    rootGroup.add(gaugeCyl);
+            ctx.fillStyle = '#a855f7';
+            ctx.font = '700 14px sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText('FAIL-SAFE PROTECTION', 978, 136);
 
-    const canister = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.65, 0.55, 1.8, 32),
-      new THREE.MeshPhysicalMaterial({ color: 0xbae6fd, transparent: true, opacity: 0.55, roughness: 0.1 })
-    );
-    canister.position.set(-7.5, -0.4, -1.3);
-    rootGroup.add(canister);
+            ctx.fillStyle = 'rgba(168,85,247,0.22)';
+            roundRect(ctx, 1148, 118, 92, 24, 6); ctx.fill();
+            ctx.fillStyle = '#d8b4fe';
+            ctx.font = '700 11px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Patent Pending', 1194, 134);
 
-    const ettGroup = new THREE.Group();
-    ettGroup.position.set(7.2, -1.2, 0.4);
-    rootGroup.add(ettGroup);
+            // Inner Vent Status Box
+            ctx.fillStyle = isVentOpen ? 'rgba(168,85,247,0.18)' : '#070c14';
+            roundRect(ctx, 978, 168, 260, 390, 14); ctx.fill();
+            ctx.strokeStyle = isVentOpen ? '#a855f7' : '#1e293b';
+            ctx.lineWidth = 2.5;
+            ctx.stroke();
 
-    const ettCurve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(-1.2, 1.8, 0),
-      new THREE.Vector3(-0.2, 0.6, 0),
-      new THREE.Vector3(0.8, -0.4, 0),
-      new THREE.Vector3(2.2, -0.9, 0)
-    ]);
-    const ettMesh = new THREE.Mesh(new THREE.TubeGeometry(ettCurve, 40, 0.22, 20, false), matClearTube);
-    ettGroup.add(ettMesh);
+            // Vent Circle Icon
+            ctx.fillStyle = isVentOpen ? '#a855f7' : 'rgba(16,185,129,0.2)';
+            ctx.beginPath(); ctx.arc(1108, 305, 36, 0, Math.PI * 2); ctx.fill();
+            ctx.strokeStyle = isVentOpen ? '#ffffff' : '#10b981';
+            ctx.lineWidth = 3; ctx.stroke();
 
-    const ettConn = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.24, 0.55, 24), matWhiteHousing);
-    ettConn.rotation.z = 0.55;
-    ettConn.position.set(-1.35, 2.0, 0);
-    ettGroup.add(ettConn);
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '900 22px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(isVentOpen ? 'OPEN' : 'SAFE', 1108, 313);
 
-    const cuffMesh = new THREE.Mesh(
-      new THREE.SphereGeometry(0.52, 28, 28),
-      new THREE.MeshPhysicalMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.48, roughness: 0.15 })
-    );
-    cuffMesh.scale.set(1.45, 0.95, 0.95);
-    cuffMesh.position.set(1.25, -0.62, 0);
-    ettGroup.add(cuffMesh);
+            ctx.fillStyle = isVentOpen ? '#d8b4fe' : '#10b981';
+            ctx.font = '800 17px sans-serif';
+            ctx.fillText(isVentOpen ? 'FAIL-SAFE VENT: OPEN' : 'ATMOSPHERIC VENT: SEALED', 1108, 376);
 
-    const curveWallVac = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(-3.55, -0.55, 0.05),
-      new THREE.Vector3(-5.0, -1.7, 0.35),
-      new THREE.Vector3(-6.4, -2.2, -0.3),
-      new THREE.Vector3(-7.5, 0.5, -1.2)
-    ]);
-    rootGroup.add(new THREE.Mesh(new THREE.TubeGeometry(curveWallVac, 50, 0.11, 16, false), matClearTube));
+            ctx.fillStyle = '#94a3b8';
+            ctx.font = '500 13px sans-serif';
+            if (isVentOpen) {
+                ctx.fillText('Atmosphere breaking vacuum', 1108, 405);
+                ctx.fillText('(0 mmHg) — Mucosa released', 1108, 424);
+            } else {
+                ctx.fillText('Suction line vacuum', 1108, 405);
+                ctx.fillText('actively maintained', 1108, 424);
+            }
 
-    const curveDeep = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(3.55, -0.35, 0.05),
-      new THREE.Vector3(4.75, -0.6, 0.25),
-      new THREE.Vector3(5.4, 0.2, 0.35),
-      new THREE.Vector3(5.85, 0.8, 0.4)
-    ]);
-    rootGroup.add(new THREE.Mesh(new THREE.TubeGeometry(curveDeep, 50, 0.10, 16, false), matClearTube));
+            // Manual Release Button
+            ctx.fillStyle = isVentOpen ? '#7e22ce' : '#1e293b';
+            roundRect(ctx, 978, 576, 260, 46, 10); ctx.fill();
+            ctx.strokeStyle = '#475569'; ctx.lineWidth = 1.5; ctx.stroke();
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '700 13px sans-serif';
+            ctx.fillText('⚡ MANUAL ATMOSPHERIC RELEASE', 1108, 604);
 
-    const curveSSD = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(3.55, -1.05, 0.05),
-      new THREE.Vector3(4.9, -1.45, 0.25),
-      new THREE.Vector3(6.4, -1.65, 0.35),
-      new THREE.Vector3(8.0, -1.65, 0.4)
-    ]);
-    rootGroup.add(new THREE.Mesh(new THREE.TubeGeometry(curveSSD, 50, 0.09, 16, false), matClearTube));
+            // Shift Metrics
+            ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+            ctx.beginPath(); ctx.moveTo(978, 640); ctx.lineTo(1238, 640); ctx.stroke();
 
-    function makeTubeFlag(text, pos) {
-      const c = document.createElement('canvas');
-      c.width = 256; c.height = 80;
-      const cx = c.getContext('2d');
-      cx.fillStyle = '#ffffff';
-      cx.fillRect(0, 0, 256, 80);
-      cx.strokeStyle = '#cbd5e1';
-      cx.lineWidth = 4;
-      cx.strokeRect(2, 2, 252, 76);
-      cx.fillStyle = '#0f172a';
-      cx.font = 'bold 22px Segoe UI, sans-serif';
-      cx.textAlign = 'center';
-      cx.fillText(text, 128, 48);
-      const tex = new THREE.CanvasTexture(c);
-      const flag = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.32, 0.05), new THREE.MeshBasicMaterial({ map: tex }));
-      flag.position.copy(pos);
-      rootGroup.add(flag);
-    }
-    makeTubeFlag('TO WALL VACUUM', new THREE.Vector3(-4.5, -1.35, 0.32));
-    makeTubeFlag('DEEP SUCTION', new THREE.Vector3(4.75, -0.52, 0.32));
-    makeTubeFlag('SUBGLOTTIC (SSD)', new THREE.Vector3(4.85, -1.45, 0.32));
+            ctx.textAlign = 'left';
+            drawMetric(978, 662, 'Subglottic Volume:', '24.5 mL', '#f8fafc');
+            drawMetric(1118, 662, 'Suction Events:', '6 Today', '#f8fafc');
+            drawMetric(978, 718, 'Line Resistance:', 'Normal (6.7)', '#f8fafc');
+            drawMetric(1118, 718, 'Response Latency:', '22 ms', '#10b981');
+        }
 
-    const droplets = [];
-    const dropGeo = new THREE.SphereGeometry(0.065, 12, 12);
-    const dropMatSSD = new THREE.MeshBasicMaterial({ color: 0x10b981 });
-    const dropMatVac = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
+        function drawMetric(x, y, label, val, valColor) {
+            ctx.fillStyle = '#94a3b8';
+            ctx.font = '500 12px sans-serif';
+            ctx.fillText(label, x, y);
+            ctx.fillStyle = valColor;
+            ctx.font = '800 16px sans-serif';
+            ctx.fillText(val, x, y + 21);
+        }
 
-    for (let i = 0; i < 12; i++) {
-      const m1 = new THREE.Mesh(dropGeo, dropMatSSD);
-      rootGroup.add(m1);
-      droplets.push({ mesh: m1, curve: curveSSD, t: i / 12, reverse: true });
+        function drawWavePanel(x, y, w, h, label, data, min, max, color) {
+            ctx.fillStyle = '#080d14';
+            roundRect(ctx, x, y, w, h, 10); ctx.fill();
+            ctx.strokeStyle = '#162032'; ctx.lineWidth = 1.5; ctx.stroke();
 
-      const m2 = new THREE.Mesh(dropGeo, dropMatVac);
-      rootGroup.add(m2);
-      droplets.push({ mesh: m2, curve: curveWallVac, t: i / 12, reverse: false });
-    }
+            // Grid lines
+            ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+            ctx.lineWidth = 1;
+            for (let gy = y + 36; gy < y + h; gy += 36) {
+                ctx.beginPath(); ctx.moveTo(x, gy); ctx.lineTo(x + w, gy); ctx.stroke();
+            }
 
-    window.setProfile = function(key, press, label) {
-      simState.profile = label;
-      simState.targetPressure = press;
-      document.getElementById('profile-label').textContent = label + ' (' + press + ' mmHg)';
-      document.querySelectorAll('.profile-btn').forEach(b => b.classList.remove('active'));
-      event.currentTarget.classList.add('active');
-    };
+            // Label
+            ctx.fillStyle = color;
+            ctx.font = '700 13px sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText(label, x + 14, y + 24);
 
-    window.setLineState = function(stateKey) {
-      simState.lineState = stateKey;
-      document.querySelectorAll('.state-btn').forEach(b => b.classList.remove('active'));
-      document.getElementById('st-' + stateKey).classList.add('active');
+            // Waveform Trace
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 3.5;
+            ctx.beginPath();
+            const step = (w - 20) / (data.length - 1);
+            data.forEach((v, i) => {
+                const norm = Math.max(0, Math.min(1, (v - min) / (max - min)));
+                const py = (y + h - 18) - norm * (h - 52);
+                const px = x + 10 + i * step;
+                if (i === 0) ctx.moveTo(px, py);
+                else ctx.lineTo(px, py);
+            });
+            ctx.stroke();
+        }
 
-      const alertBox = document.getElementById('alert-box');
-      const dot = document.getElementById('status-dot');
-      const stText = document.getElementById('status-text');
+        // ==========================================
+        // 3. THREE.JS 3D SCENE & BEDSIDE HARDWARE
+        // ==========================================
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x060a10);
+        scene.fog = new THREE.FogExp2(0x060a10, 0.035);
 
-      if (stateKey === 'normal') {
-        dot.className = 'dot';
-        stText.textContent = 'SYSTEM OK — CLOSED-LOOP ACTIVE';
-        alertBox.style.borderColor = '#10b981';
-        alertBox.style.background = 'rgba(16, 185, 129, 0.12)';
-        alertBox.innerHTML = '<strong>الحالة: Normal (تدفق مستقر)</strong><br>التدفق مستقر والضغط السالب ضمن النطاق الآمن المضبوط.';
-      } else if (stateKey === 'partial') {
-        dot.className = 'dot amber';
-        stText.textContent = 'NOTICE — PARTIAL MUCUS CLOG DETECTED';
-        alertBox.style.borderColor = '#f59e0b';
-        alertBox.style.background = 'rgba(245, 158, 11, 0.15)';
-        alertBox.innerHTML = '<strong>الحالة: Partial Clog (انسداد جزئي)</strong><br>انخفاض تدريجي بالتدفق وارتفاع بالضغط؛ يوصى بمتابعة تصريف الإفرازات اللزجة.';
-      } else if (stateKey === 'block') {
-        dot.className = 'dot red';
-        stText.textContent = 'ALERT — COMPLETE LINE BLOCKAGE';
-        alertBox.style.borderColor = '#ef4444';
-        alertBox.style.background = 'rgba(239, 68, 68, 0.18)';
-        alertBox.innerHTML = '<strong>الحالة: Complete Blockage (انسداد كامل)</strong><br>التدفق يقترب من الصفر والضغط عند الحد الأقصى؛ يرجى فحص أنبوب الشفط فوراً.';
-      } else if (stateKey === 'tissue') {
-        dot.className = 'dot red';
-        stText.textContent = 'SAFETY INTERVENTION — TISSUE CONTACT';
-        alertBox.style.borderColor = '#ef4444';
-        alertBox.style.background = 'rgba(239, 68, 68, 0.22)';
-        alertBox.innerHTML = '<strong>الحالة: Tissue Contact (التصاق جدار النسيج!)</strong><br>هبوط مفاجئ بالتدفق؛ تم تخفيف الشفط تلقائياً لحماية الغشاء المخاطي وتنبيه الممارس.';
-      } else if (stateKey === 'leak') {
-        dot.className = 'dot amber';
-        stText.textContent = 'WARNING — LINE LEAK OR DISCONNECT';
-        alertBox.style.borderColor = '#f59e0b';
-        alertBox.style.background = 'rgba(245, 158, 11, 0.15)';
-        alertBox.innerHTML = '<strong>الحالة: Leak or Disconnect (تسريب/انفصال)</strong><br>تدفق هواء مرتفع جداً مع هبوط الضغط السالب دون الحد المضبوط؛ تأكد من إحكام الوصلات.';
-      } else if (stateKey === 'undetermined') {
-        dot.className = 'dot amber';
-        stText.textContent = 'UNDETERMINED PATTERN — CLINICIAN ALERT ONLY';
-        alertBox.style.borderColor = '#f59e0b';
-        alertBox.style.background = 'rgba(245, 158, 11, 0.15)';
-        alertBox.innerHTML = '<strong>الحالة: Undetermined (نمط غير مصنف)</strong><br>تنبيه فقط دون تدخل آلي عنيف (Alerts first | Clinician decides).';
-      }
-    };
+        const camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.set(1.8, 1.1, 7.2);
 
-    window.setCamView = function(view) {
-      const dist = 12.5;
-      if (view === 'front') camera.position.set(0, 0, dist);
-      else if (view === 'back') camera.position.set(0, 0, -dist);
-      else if (view === 'right') camera.position.set(dist, 0, 0);
-      else if (view === 'left') camera.position.set(-dist, 0, 0);
-      else if (view === 'top') camera.position.set(0, dist, 0.1);
-      else if (view === 'bottom') camera.position.set(0, -dist, 0.1);
-      controls.target.set(0, 0, 0);
-      controls.update();
-    };
+        const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        container.appendChild(renderer.domElement);
 
-    window.updateExplode = function(val) {
-      const f = parseFloat(val) / 100;
-      document.getElementById('explode-val').textContent = Math.round(f * 100) + '%';
-      grpFrontBezel.position.z = f * 2.2;
-      grpRearHousing.position.z = -f * 1.8;
-      grpTopLock.position.y = f * 1.4;
-      grpRightValves.position.x = f * 1.5;
-      grpLeftValve.position.x = -f * 1.5;
-    };
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.06;
+        controls.minDistance = 2.6;
+        controls.maxDistance = 14;
+        controls.target.set(0, 0.4, 0);
 
-    let frameCount = 0;
-    function animate() {
-      requestAnimationFrame(animate);
-      frameCount++;
+        // Lighting
+        const hemiLight = new THREE.HemisphereLight(0xdbeafe, 0x0f172a, 0.85);
+        scene.add(hemiLight);
 
-      if (frameCount % 2 === 0) {
-        updateScreenCanvas();
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1.1);
+        dirLight.position.set(5, 8, 7);
+        dirLight.castShadow = true;
+        scene.add(dirLight);
+
+        const rimLight = new THREE.PointLight(0x06b6d4, 0.8, 15);
+        rimLight.position.set(-4, 3, -3);
+        scene.add(rimLight);
+
+        // Subtle ICU Floor Grid
+        const gridHelper = new THREE.GridHelper(24, 32, 0x1e293b, 0x0f172a);
+        gridHelper.position.y = -3.2;
+        scene.add(gridHelper);
+
+        // Device Group
+        const deviceGroup = new THREE.Group();
+        deviceGroup.position.set(0, 0.4, 0);
+        scene.add(deviceGroup);
+
+        // Materials
+        const absWhiteMat = new THREE.MeshStandardMaterial({ color: 0xf1f5f9, roughness: 0.35, metalness: 0.08 });
+        const darkBezelMat = new THREE.MeshStandardMaterial({ color: 0x090d16, roughness: 0.25, metalness: 0.4 });
+        const steelMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.25, metalness: 0.85 });
+        const portBlueMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.3, metalness: 0.2 });
+        const portCyanMat = new THREE.MeshStandardMaterial({ color: 0x06b6d4, roughness: 0.3, metalness: 0.2 });
+        const tubeMat = new THREE.MeshPhysicalMaterial({
+            color: 0xe0f2fe,
+            transparent: true,
+            opacity: 0.38,
+            roughness: 0.15,
+            transmission: 0.4,
+            side: THREE.DoubleSide
+        });
+
+        // Stainless Steel IV Pole (Behind Device)
+        const poleGeo = new THREE.CylinderGeometry(0.11, 0.11, 8.5, 24);
+        const poleMesh = new THREE.Mesh(poleGeo, steelMat);
+        poleMesh.position.set(0, -0.4, -0.75);
+        deviceGroup.add(poleMesh);
+
+        // IV Pole Clamp Bracket & Knob
+        const clampGeo = new THREE.BoxGeometry(0.55, 0.65, 0.75);
+        const clampMesh = new THREE.Mesh(clampGeo, steelMat);
+        clampMesh.position.set(0, 0, -0.5);
+        deviceGroup.add(clampMesh);
+
+        const knobGeo = new THREE.CylinderGeometry(0.18, 0.18, 0.25, 20);
+        knobGeo.rotateZ(Math.PI / 2);
+        const knobMesh = new THREE.Mesh(knobGeo, darkBezelMat);
+        knobMesh.position.set(0.38, 0, -0.65);
+        deviceGroup.add(knobMesh);
+
+        // Main Medical ABS Console Enclosure
+        const bodyGeo = new THREE.BoxGeometry(4.4, 2.85, 0.42);
+        const bodyMesh = new THREE.Mesh(bodyGeo, absWhiteMat);
+        bodyMesh.castShadow = true;
+        deviceGroup.add(bodyMesh);
+
+        // Front Black Screen Bezel
+        const bezelGeo = new THREE.BoxGeometry(4.12, 2.6, 0.04);
+        const bezelMesh = new THREE.Mesh(bezelGeo, darkBezelMat);
+        bezelMesh.position.z = 0.215;
+        deviceGroup.add(bezelMesh);
+
+        // Live Screen Plane (Mapped to uiCanvas)
+        const screenTexture = new THREE.CanvasTexture(uiCanvas);
+        screenTexture.minFilter = THREE.LinearFilter;
+        screenTexture.magFilter = THREE.LinearFilter;
+        const screenGeo = new THREE.PlaneGeometry(3.92, 2.45);
+        const screenMat = new THREE.MeshBasicMaterial({ map: screenTexture });
+        const screenMesh = new THREE.Mesh(screenGeo, screenMat);
+        screenMesh.position.z = 0.238;
+        deviceGroup.add(screenMesh);
+
+        // --- PNEUMATIC PORTS & FAIL-SAFE ATMOSPHERIC VENT ---
+        function addSidePort(x, y, z, rotZ, mat) {
+            const pGroup = new THREE.Group();
+            const collar = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.16, 0.18, 20), steelMat);
+            const barb = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.11, 0.26, 20), mat);
+            barb.position.y = 0.2;
+            pGroup.add(collar, barb);
+            pGroup.position.set(x, y, z);
+            pGroup.rotation.z = rotZ;
+            deviceGroup.add(pGroup);
+            return pGroup;
+        }
+
+        // Left Port: To Wall Vacuum
+        addSidePort(-2.22, -0.25, 0, Math.PI / 2, steelMat);
+
+        // Right Upper Port: Subglottic (EVAC)
+        addSidePort(2.22, 0.45, 0, -Math.PI / 2, portCyanMat);
+
+        // Right Lower Port: Closed Suction Catheter
+        addSidePort(2.22, -0.25, 0, -Math.PI / 2, portBlueMat);
+
+        // Right Top Port: FAIL-SAFE ATMOSPHERIC SOLENOID VENT VALVE
+        const ventHousing = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.16, 0.18, 0.24, 24),
+            steelMat
+        );
+        ventHousing.rotation.z = -Math.PI / 2;
+        ventHousing.position.set(2.28, 1.02, 0);
+        deviceGroup.add(ventHousing);
+
+        const ventRingMat = new THREE.MeshStandardMaterial({
+            color: 0x10b981,
+            emissive: 0x10b981,
+            emissiveIntensity: 0.7,
+            roughness: 0.2
+        });
+        const ventCap = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.13, 0.13, 0.12, 24),
+            ventRingMat
+        );
+        ventCap.rotation.z = -Math.PI / 2;
+        ventCap.position.set(2.42, 1.02, 0);
+        deviceGroup.add(ventCap);
+
+        // --- MEDICAL TUBING CURVES & FLOW PARTICLES ---
+        const wallCurve = new THREE.CatmullRomCurve3([
+            new THREE.Vector3(-2.45, -0.25, 0),
+            new THREE.Vector3(-3.3, -0.45, 0.15),
+            new THREE.Vector3(-4.1, -1.1, 0.1),
+            new THREE.Vector3(-4.8, -2.2, -0.2)
+        ]);
+        const evacCurve = new THREE.CatmullRomCurve3([
+            new THREE.Vector3(2.45, 0.45, 0),
+            new THREE.Vector3(3.3, 0.25, 0.2),
+            new THREE.Vector3(4.1, -0.4, 0.25),
+            new THREE.Vector3(4.8, -1.5, 0.1)
+        ]);
+        const deepCurve = new THREE.CatmullRomCurve3([
+            new THREE.Vector3(2.45, -0.25, 0),
+            new THREE.Vector3(3.35, -0.55, 0.15),
+            new THREE.Vector3(4.15, -1.25, 0.15),
+            new THREE.Vector3(4.8, -2.3, 0.0)
+        ]);
+
+        [wallCurve, evacCurve, deepCurve].forEach(curve => {
+            const tGeo = new THREE.TubeGeometry(curve, 48, 0.075, 16, false);
+            const tMesh = new THREE.Mesh(tGeo, tubeMat);
+            deviceGroup.add(tMesh);
+        });
+
+        // Hydrophobic Bacterial Filter & Trap on EVAC Line
+        const trapGroup = new THREE.Group();
+        const trapBody = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.22, 0.20, 0.55, 24),
+            new THREE.MeshPhysicalMaterial({ color: 0xfef08a, transparent: true, opacity: 0.55, roughness: 0.2 })
+        );
+        const filterDisk = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.24, 0.24, 0.12, 24),
+            absWhiteMat
+        );
+        filterDisk.position.y = 0.32;
+        trapGroup.add(trapBody, filterDisk);
+        trapGroup.position.set(3.45, 0.15, 0.22);
+        trapGroup.rotation.z = 0.35;
+        deviceGroup.add(trapGroup);
+
+        // Floating 3D Text Labels on Ports
+        function create3DLabel(text, x, y, z, bgHex) {
+            const c = document.createElement('canvas');
+            c.width = 360; c.height = 76;
+            const cx = c.getContext('2d');
+            cx.fillStyle = bgHex || 'rgba(15, 23, 42, 0.9)';
+            roundRect(cx, 4, 4, 352, 68, 16); cx.fill();
+            cx.strokeStyle = '#38bdf8'; cx.lineWidth = 3; cx.stroke();
+            cx.fillStyle = '#ffffff';
+            cx.font = '800 24px sans-serif';
+            cx.textAlign = 'center';
+            cx.fillText(text, 180, 46);
+
+            const tex = new THREE.CanvasTexture(c);
+            const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex }));
+            sp.position.set(x, y, z);
+            sp.scale.set(1.45, 0.31, 1);
+            deviceGroup.add(sp);
+        }
+
+        create3DLabel('TO WALL VACUUM', -3.35, 0.25, 0.2);
+        create3DLabel('FAIL-SAFE VENT', 3.35, 1.15, 0.1, 'rgba(88, 28, 135, 0.92)');
+        create3DLabel('SUBGLOTTIC (EVAC)', 3.65, 0.65, 0.25);
+        create3DLabel('CLOSED SUCTION', 3.65, -0.85, 0.2);
+
+        // Animated Flow Particles inside Tubes
+        const particleCount = 45;
+        const particles = [];
+        const pGeo = new THREE.SphereGeometry(0.038, 10, 10);
+        const pMat = new THREE.MeshBasicMaterial({ color: 0x06b6d4 });
+
+        for (let i = 0; i < particleCount; i++) {
+            const mesh = new THREE.Mesh(pGeo, pMat);
+            deviceGroup.add(mesh);
+            const curveChoice = i % 3 === 0 ? wallCurve : (i % 3 === 1 ? evacCurve : deepCurve);
+            const reverseDir = (curveChoice !== wallCurve);
+            particles.push({
+                mesh,
+                curve: curveChoice,
+                t: (i / particleCount),
+                reverse: reverseDir
+            });
+        }
+
+        // ==========================================
+        // 4. CAMERA PRESET ANIMATION (SCREEN FOCUS)
+        // ==========================================
+        let targetCamPos = new THREE.Vector3(1.8, 1.1, 7.2);
+        let targetLookAt = new THREE.Vector3(0, 0.4, 0);
+        let isTransitioningCam = false;
+
+        function setCameraView(view) {
+            document.querySelectorAll('.cam-btn').forEach(b => b.classList.remove('active'));
+            isTransitioningCam = true;
+
+            if (view === 'OVERVIEW') {
+                document.getElementById('camOverview').classList.add('active');
+                targetCamPos.set(1.8, 1.1, 7.2);
+                targetLookAt.set(0, 0.4, 0);
+            } else if (view === 'SCREEN') {
+                document.getElementById('camScreen').classList.add('active');
+                targetCamPos.set(0, 0.4, 3.85);
+                targetLookAt.set(0, 0.4, 0.24);
+            } else if (view === 'VALVE') {
+                document.getElementById('camValve').classList.add('active');
+                targetCamPos.set(4.4, 1.3, 3.6);
+                targetLookAt.set(2.3, 0.45, 0);
+            }
+        }
+
+        controls.addEventListener('start', () => {
+            isTransitioningCam = false;
+        });
+
+        // ==========================================
+        // 5. DIRECT RAYCAST CLICKING ON 3D SCREEN
+        // ==========================================
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
+        renderer.domElement.addEventListener('pointerdown', (e) => {
+            const rect = renderer.domElement.getBoundingClientRect();
+            mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const hits = raycaster.intersectObject(screenMesh);
+            if (hits.length > 0) {
+                const uv = hits[0].uv;
+                const cx = uv.x * 1280;
+                const cy = (1 - uv.y) * 800;
+
+                if (cy >= 20 && cy <= 64) {
+                    if (cx >= 610 && cx < 688) setProfile('ADULT');
+                    else if (cx >= 688 && cx < 766) setProfile('PEDIATRIC');
+                    else if (cx >= 766 && cx <= 845) setProfile('NEONATAL');
+                    else if (cx >= 860 && cx < 1002) setMode('SUBGLOTTIC');
+                    else if (cx >= 1002 && cx <= 1145) setMode('CO_PILOT');
+                }
+                if (cx >= 978 && cx <= 1238 && cy >= 576 && cy <= 622) {
+                    toggleManualVent();
+                }
+            }
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // ==========================================
+        // 6. MAIN RENDER & ANIMATION LOOP
+        // ==========================================
+        let frameCounter = 0;
+
+        function animate() {
+            requestAnimationFrame(animate);
+            frameCounter++;
+
+            if (frameCounter % 3 === 0) {
+                updateTelemetryMath();
+                drawScreenUI();
+                screenTexture.needsUpdate = true;
+            }
+
+            if (isVentOpen) {
+                ventRingMat.color.setHex(0xa855f7);
+                ventRingMat.emissive.setHex(0xa855f7);
+                ventRingMat.emissiveIntensity = 1.4 + Math.sin(Date.now() / 80) * 0.5;
+                ventCap.position.x = 2.52;
+            } else {
+                ventRingMat.color.setHex(0x10b981);
+                ventRingMat.emissive.setHex(0x10b981);
+                ventRingMat.emissiveIntensity = 0.6;
+                ventCap.position.x = 2.42;
+            }
+
+            let speed = 0.008;
+            let pColor = 0x06b6d4;
+            if (currentScenario === 'PARTIAL') { speed = 0.003; pColor = 0xf59e0b; }
+            else if (currentScenario === 'BLOCK') { speed = 0.0; pColor = 0xef4444; }
+            else if (currentScenario === 'TISSUE') { speed = isVentOpen ? 0.012 : 0.0; pColor = 0xa855f7; }
+            else if (currentScenario === 'LEAK') { speed = 0.015; pColor = 0x60a5fa; }
+
+            pMat.color.setHex(pColor);
+            particles.forEach(p => {
+                if (speed > 0) {
+                    p.t += p.reverse ? -speed : speed;
+                    if (p.t > 1) p.t -= 1;
+                    if (p.t < 0) p.t += 1;
+                }
+                const pt = p.curve.getPointAt(p.t);
+                p.mesh.position.copy(pt);
+            });
+
+            if (isTransitioningCam) {
+                camera.position.lerp(targetCamPos, 0.08);
+                controls.target.lerp(targetLookAt, 0.08);
+                if (camera.position.distanceTo(targetCamPos) < 0.02) {
+                    isTransitioningCam = false;
+                }
+            }
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        drawScreenUI();
         screenTexture.needsUpdate = true;
-        document.getElementById('ui-press').textContent = Math.round(simState.currentPressure) + ' mmHg';
-        document.getElementById('ui-flow').textContent = simState.currentFlow.toFixed(1) + ' L/min';
-      }
-
-      const speed = Math.max(0.0005, (simState.currentFlow / 28) * 0.0055);
-      droplets.forEach(d => {
-        d.t = (d.t + (d.reverse ? -speed : speed) + 1) % 1;
-        const pt = d.curve.getPointAt(d.t);
-        d.mesh.position.copy(pt);
-      });
-
-      controls.update();
-      renderer.render(scene, camera);
-    }
-    animate();
-
-    window.addEventListener('resize', () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    });
-  </script>
+        animate();
+    </script>
 </body>
 </html>
